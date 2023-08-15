@@ -1,0 +1,154 @@
+- step:
+    name: docker-image-dockerhub
+    image: docker:dind
+    command: 
+      - apk add --no-cache python3 py3-pip
+      - python writedockerfile.py {parameters}
+      - dockerd &
+      - export DOCKERTAG={parameter-value:docker-tag} && 
+        export IMAGE={parameter-value:image-name}
+      - test -f "/valohai/repository/Dockerfile" && 
+        { docker build -t $IMAGE -f /valohai/repository/Dockerfile --progress=plain . ;
+        docker tag $IMAGE $DOCKERTAG;
+        docker login -u $DHUSERNAME -p $DHPASSWORD;
+        docker push $DOCKERTAG; }
+    inputs:
+        - name: dockerfile
+          optional: true
+          default: s3://valohai-data-910181886844/docker-image-builder/py-vh-tf/Dockerfile
+    parameters:
+        - name: image-name
+          default: noora/py-vh:0.1
+          type: string
+          optional: true
+        - name: docker-tag
+          default: noorai/py-vh-tf:0.1
+          optional: true
+          description: Tag that is used when pushing the image to the registry. Note that if there is already an image with the same tag, the old image will be removed. 
+        - name: repository
+          type: string
+          optional: true
+        - name: dockerfile
+          default: "# Our base image
+
+            FROM python:3.9
+
+
+            # Copy the requirements.txt file to our Docker image
+
+            ADD requirements.txt .
+
+
+            # Install the requirements.txt
+
+            RUN pip install -r requirements.txt"
+          type: string
+          optional: true
+          widget: SQL
+
+- step:
+    name: docker-image-gcp
+    image: docker:dind
+    command: 
+      - apk add --no-cache python3 py3-pip
+      - python writedockerfile.py {parameters}
+      - dockerd &
+      - export DOCKERTAG={parameter-value:docker-tag} && 
+        export REPOSITORY={parameter-value:repository} &&
+        export IMAGE={parameter-value:image-name} &&
+      - test -f "/valohai/repository/Dockerfile" && 
+        { docker build -t $IMAGE -f /valohai/repository/Dockerfile --progress=plain . ;
+        docker tag $IMAGE $DOCKERTAG;
+        echo $GCPKEY | docker login -u _json_key --password-stdin $REPOSITORY;
+        docker push $DOCKERTAG; }
+    inputs:
+        - name: dockerfile
+          optional: true
+          default: s3://valohai-data-910181886844/docker-image-builder/py-vh-tf/Dockerfile
+    parameters:
+        - name: loginparam
+          default: "Metadata-Flavor: Google"
+          type: string
+          optional: true
+        - name: image-name
+          default: noora/py-vh:0.1
+          type: string
+          optional: true
+        - name: docker-tag
+          default: europe-west4-docker.pkg.dev/valohai-dev/noora-test/py-vh-tf:0.1
+          optional: true
+          description: Tag that is used when pushing the image to the registry. Note that if there is already an image with the same tag, the tag will be removed and assigned to the new image. 
+        - name: repository
+          default: https://europe-west4-docker.pkg.dev
+          type: string
+          optional: true
+        - name: dockerfile
+          default: "# Our base image
+
+            FROM python:3.9
+
+
+            # Copy the requirements.txt file to our Docker image
+
+            ADD requirements.txt .
+
+
+            # Install the requirements.txt
+
+            RUN pip install -r requirements.txt"
+          type: string
+          optional: true
+          description: You can use this parameter to provide the Dockerfile contents instead of giving it as an input.
+          widget: SQL
+
+- step:
+    name: docker-image-aws
+    image: docker:dind
+    environment: staging-aws-eu-west-1-t2-small
+    command: 
+      - apk add --no-cache python3 py3-pip aws-cli
+      - python writedockerfile.py {parameters}
+      - dockerd &
+      - export DOCKERTAG={parameter-value:docker-tag} && 
+        export REPOSITORY={parameter-value:repository} &&
+        export IMAGE={parameter-value:image-name}
+      - test -f "/valohai/repository/Dockerfile" && 
+        { docker build -t $IMAGE -f /valohai/repository/Dockerfile --progress=plain . ;
+        docker tag $IMAGE $DOCKERTAG;
+        aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin $REPOSITORY;
+        docker push $DOCKERTAG; }
+    inputs:
+        - name: dockerfile
+          optional: true
+          default: s3://valohai-data-910181886844/docker-image-builder/py-vh-tf/Dockerfile
+    parameters:
+        - name: image-name
+          default: noora/py-vh:0.1
+          type: string
+          optional: true
+        - name: docker-tag
+          default: 910181886844.dkr.ecr.eu-west-1.amazonaws.com/py-vh:0.1
+          type: string
+          optional: true
+          description: Tag that is used when pushing the image to the registry. Note that if there is already an image with the same tag, the tag will be removed and assigned to the new image. 
+        - name: repository
+          default: 910181886844.dkr.ecr.eu-west-1.amazonaws.com/py-vh
+          type: string
+          optional: true
+        - name: dockerfile
+          default: "# Our base image
+
+            FROM python:3.9
+
+
+            # Copy the requirements.txt file to our Docker image
+
+            ADD requirements.txt .
+
+
+            # Install the requirements.txt
+
+            RUN pip install -r requirements.txt"
+          type: string
+          optional: true
+          widget: SQL
