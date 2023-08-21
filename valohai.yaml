@@ -6,21 +6,15 @@
       - python writedockerfile.py {parameters}
       - dockerd &
       - export DOCKERTAG={parameter-value:docker-tag} && 
-        export IMAGE={parameter-value:image-name}
-      - test -f "/valohai/repository/Dockerfile" && 
-        { docker build -t $IMAGE -f /valohai/repository/Dockerfile --progress=plain . ;
-        docker tag $IMAGE $DOCKERTAG;
+      - test -f "/valohai/repository/Dockerfile"
+        { docker build -t $DOCKERTAG -f /valohai/repository/Dockerfile --progress=plain . ;
         docker login -u $DHUSERNAME -p $DHPASSWORD;
         docker push $DOCKERTAG; }
     inputs:
-        - name: dockerfile
+        - name: dockerfileinput
           optional: true
           default: s3://valohai-data-910181886844/docker-image-builder/py-vh-tf/Dockerfile
     parameters:
-        - name: image-name
-          default: noora/py-vh:0.1
-          type: string
-          optional: true
         - name: docker-tag
           default: noorai/py-vh-tf:0.1
           optional: true
@@ -44,7 +38,7 @@
             RUN pip install -r requirements.txt"
           type: string
           optional: true
-          widget: SQL
+          widget: dockerfile
 
 - step:
     name: docker-image-gcp
@@ -54,26 +48,16 @@
       - python writedockerfile.py {parameters}
       - dockerd &
       - export DOCKERTAG={parameter-value:docker-tag} && 
-        export REPOSITORY={parameter-value:repository} &&
-        export IMAGE={parameter-value:image-name} &&
+        export REPOSITORY={parameter-value:repository}
       - test -f "/valohai/repository/Dockerfile" && 
-        { docker build -t $IMAGE -f /valohai/repository/Dockerfile --progress=plain . ;
-        docker tag $IMAGE $DOCKERTAG;
+        { docker build -t $DOCKERTAG -f /valohai/repository/Dockerfile --progress=plain . ;
         echo $GCPKEY | docker login -u _json_key --password-stdin $REPOSITORY;
         docker push $DOCKERTAG; }
     inputs:
-        - name: dockerfile
+        - name: dockerfile-input
           optional: true
           default: s3://valohai-data-910181886844/docker-image-builder/py-vh-tf/Dockerfile
     parameters:
-        - name: loginparam
-          default: "Metadata-Flavor: Google"
-          type: string
-          optional: true
-        - name: image-name
-          default: noora/py-vh:0.1
-          type: string
-          optional: true
         - name: docker-tag
           default: europe-west4-docker.pkg.dev/valohai-dev/noora-test/py-vh-tf:0.1
           optional: true
@@ -99,7 +83,7 @@
           type: string
           optional: true
           description: You can use this parameter to provide the Dockerfile contents instead of giving it as an input.
-          widget: SQL
+          widget: dockerfile
 
 - step:
     name: docker-image-aws
@@ -110,11 +94,9 @@
       - python writedockerfile.py {parameters}
       - dockerd &
       - export DOCKERTAG={parameter-value:docker-tag} && 
-        export REPOSITORY={parameter-value:repository} &&
-        export IMAGE={parameter-value:image-name}
+        export REPOSITORY={parameter-value:repository}
       - test -f "/valohai/repository/Dockerfile" && 
-        { docker build -t $IMAGE -f /valohai/repository/Dockerfile --progress=plain . ;
-        docker tag $IMAGE $DOCKERTAG;
+        { docker build -t $DOCKERTAG -f /valohai/repository/Dockerfile --progress=plain . ;
         aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin $REPOSITORY;
         docker push $DOCKERTAG; }
     inputs:
@@ -122,10 +104,6 @@
           optional: true
           default: s3://valohai-data-910181886844/docker-image-builder/py-vh-tf/Dockerfile
     parameters:
-        - name: image-name
-          default: noora/py-vh:0.1
-          type: string
-          optional: true
         - name: docker-tag
           default: 910181886844.dkr.ecr.eu-west-1.amazonaws.com/py-vh:0.1
           type: string
@@ -151,4 +129,4 @@
             RUN pip install -r requirements.txt"
           type: string
           optional: true
-          widget: SQL
+          widget: dockerfile
