@@ -13,15 +13,14 @@
     inputs:
         - name: dockerfileinput
           optional: true
-          default: s3://valohai-data-910181886844/docker-image-builder/py-vh-tf/Dockerfile
     parameters:
         - name: docker-tag
-          default: noorai/py-vh-tf:0.1
           optional: true
-          description: Tag that is used when pushing the image to the registry. Note that if there is already an image with the same tag, the old image will be removed. 
+          description: "Defines the image tag when building and pushing the image: <REPOSITORY>:<TAG>. Note that if there is already an image with the same tag, the old image will be removed."
         - name: repository
           type: string
           optional: true
+          description: "required for docker login in AWS and GCP. Leave empty for Docker Hub."
         - name: dockerfile
           default: "# Our base image
 
@@ -38,6 +37,7 @@
             RUN pip install -r requirements.txt"
           type: string
           optional: true
+          description: You can use this parameter to provide the Dockerfile contents instead of giving it as an input.
           widget: dockerfile
 
 - step:
@@ -56,16 +56,14 @@
     inputs:
         - name: dockerfile-input
           optional: true
-          default: s3://valohai-data-910181886844/docker-image-builder/py-vh-tf/Dockerfile
     parameters:
         - name: docker-tag
-          default: europe-west4-docker.pkg.dev/valohai-dev/noora-test/py-vh-tf:0.1
           optional: true
-          description: Tag that is used when pushing the image to the registry. Note that if there is already an image with the same tag, the tag will be removed and assigned to the new image. 
+          description: "Tag that is used when pushing the image to the registry: <REGION>-docker.pkg.dev/<PROJECT_ID>/<REPOSITORY>/<IMAGE>:<TAG>. Note that if there is already an image with the same tag, the tag will be removed and assigned to the new image." 
         - name: repository
-          default: https://europe-west4-docker.pkg.dev
           type: string
           optional: true
+          description: "Required for docker login in AWS and GCP: https://<REGION>-docker.pkg.dev"
         - name: dockerfile
           default: "# Our base image
 
@@ -88,7 +86,6 @@
 - step:
     name: docker-image-aws
     image: docker:dind
-    environment: staging-aws-eu-west-1-t2-small
     command: 
       - apk add --no-cache python3 py3-pip aws-cli
       - python writedockerfile.py {parameters}
@@ -102,17 +99,15 @@
     inputs:
         - name: dockerfile
           optional: true
-          default: s3://valohai-data-910181886844/docker-image-builder/py-vh-tf/Dockerfile
     parameters:
         - name: docker-tag
-          default: 910181886844.dkr.ecr.eu-west-1.amazonaws.com/py-vh:0.1
           type: string
           optional: true
-          description: Tag that is used when pushing the image to the registry. Note that if there is already an image with the same tag, the tag will be removed and assigned to the new image. 
+          description: "Tag that is used when pushing the image to the registry: <AWS_ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/<REPOSITORY>:<TAG>. Note that if there is already an image with the same tag, the tag will be removed and assigned to the new image." 
         - name: repository
-          default: 910181886844.dkr.ecr.eu-west-1.amazonaws.com/py-vh
           type: string
           optional: true
+          description: "Required for docker login in AWS and GCP: <AWS_ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/<REPOSITORY>"
         - name: dockerfile
           default: "# Our base image
 
@@ -129,4 +124,5 @@
             RUN pip install -r requirements.txt"
           type: string
           optional: true
+          description: You can use this parameter to provide the Dockerfile contents instead of giving it as an input.
           widget: dockerfile
