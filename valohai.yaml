@@ -5,8 +5,8 @@
       - apk add --no-cache python3 py3-pip
       - python writedockerfile.py {parameters}
       - dockerd &
-      - export DOCKERTAG={parameter-value:docker-tag} && 
-      - test -f "/valohai/repository/Dockerfile"
+      - export DOCKERTAG={parameter-value:docker-tag}
+      - test -f "/valohai/repository/Dockerfile" &&
         { docker build -t $DOCKERTAG -f /valohai/repository/Dockerfile --progress=plain . ;
         docker login -u $DHUSERNAME -p $DHPASSWORD;
         docker push $DOCKERTAG; }
@@ -54,7 +54,7 @@
         echo $GCPKEY | docker login -u _json_key --password-stdin $REPOSITORY;
         docker push $DOCKERTAG; }
     inputs:
-        - name: dockerfile-input
+        - name: dockerfileinput
           optional: true
     parameters:
         - name: docker-tag
@@ -97,7 +97,7 @@
         aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin $REPOSITORY;
         docker push $DOCKERTAG; }
     inputs:
-        - name: dockerfile
+        - name: dockerfileinput
           optional: true
     parameters:
         - name: docker-tag
