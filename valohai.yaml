@@ -49,6 +49,9 @@
       - docker build -t $DOCKERTAG -f /valohai/repository/Dockerfile --progress=plain . 
       - echo $GCP_JSON_KEY | docker login -u _json_key --password-stdin $REPOSITORY
       - docker push $DOCKERTAG
+      - echo "New image pushed."
+      - echo "Use it in your Valohai step by setting the image property in your valohai.yaml to:"
+      - echo "$DOCKERTAG"
     icon: artifact_registry
     category: Docker build & push image
     inputs:
