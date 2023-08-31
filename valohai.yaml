@@ -1,15 +1,16 @@
 - step:
     name: docker-image-dockerhub
-    image: docker:dind
+    image: valohai/docker-image-builder:latest
     command: 
-      - apk add --no-cache python3 py3-pip
-      - python ./docker_image_builder/writeDockerfile.py {parameters}
+      - python ./docker_image_builder/writeDockerfile.py {parameter:dockerfile}
       - dockerd &
-      - export DOCKERTAG={parameter-value:docker-tag}
-      - test -f "/valohai/repository/Dockerfile" &&
-        { docker build -t $DOCKERTAG -f /valohai/repository/Dockerfile --progress=plain . ;
-        docker login -u $DHUSERNAME -p $DHPASSWORD;
-        docker push $DOCKERTAG; }
+      - export DOCKERTAG={parameter-value:repository}:{parameter-value:docker-tag}
+      - docker build -t $DOCKERTAG -f /valohai/repository/Dockerfile --progress=plain .
+      - docker login -u $DHUSERNAME -p $DHPASSWORD
+      - docker push $DOCKERTAG
+      - echo "New image pushed."
+      - echo "Use it in your Valohai step by setting the image property in your valohai.yaml to:"
+      - echo "docker.io/$DOCKERTAG"
     icon: docker_hub
     category: Docker build & push image
     inputs:
@@ -17,14 +18,11 @@
           optional: true
     parameters:
         - name: docker-tag
-          optional: true
-          description: "Defines the image tag when building and pushing the image: <USERNAME>/<REPOSITORY>:<TAG>. Note that if there is already an image with the same tag, the old image will be removed."
+          type: string
+          description: "Tag of the Docker image (e.g. 0.1 would create username/myimagename:0.1)" 
         - name: repository
           type: string
-          description: "Required for docker login in AWS and GCP. Leave empty for Docker Hub."
-        - name: region
-          type: string
-          description: "AWS region, leave empty for Docker Hub and GCP."          
+          description: "Name of your repository (e.g. username/myimagename)"    
         - name: dockerfile
           default: "# Our base image
 
@@ -41,17 +39,16 @@
 
 - step:
     name: docker-image-gcp
-    image: docker:dind
+    image: valohai/docker-image-builder:latest
     command: 
-      - apk add --no-cache python3 py3-pip
-      - python ./docker_image_builder/writeDockerfile.py {parameters}
+      - python ./docker_image_builder/writeDockerfile.py {parameter:dockerfile}
       - dockerd &
-      - export DOCKERTAG={parameter-value:docker-tag} && 
-        export REPOSITORY={parameter-value:repository}
-      - test -f "/valohai/repository/Dockerfile" && 
-        { docker build -t $DOCKERTAG -f /valohai/repository/Dockerfile --progress=plain . ;
-        echo $GCPKEY | docker login -u _json_key --password-stdin $REPOSITORY;
-        docker push $DOCKERTAG; }
+      - export DOCKERTAG={parameter-value:docker-tag} 
+      - export REPOSITORY={parameter-value:repository}
+      - export DOCKERTAG=$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/{parameter-value:repository}:{parameter-value:docker-tag}
+      - docker build -t $DOCKERTAG -f /valohai/repository/Dockerfile --progress=plain . 
+      - echo $GCP_JSON_KEY | docker login -u _json_key --password-stdin $REPOSITORY;
+      - docker push $DOCKERTAG; }
     icon: artifact_registry
     category: Docker build & push image
     inputs:
@@ -59,14 +56,10 @@
           optional: true
     parameters:
         - name: docker-tag
-          description: "Tag that is used when pushing the image to the registry: <REGION>-docker.pkg.dev/<PROJECT_ID>/<REPOSITORY>/<IMAGE>:<TAG>. Note that if there is already an image with the same tag, the tag will be removed and assigned to the new image." 
+          description: "Tag of the Docker image (e.g. 0.1 would create valohai/myimagename:0.1)"
         - name: repository
           type: string
-          description: "Required for docker login in AWS and GCP: https://<REGION>-docker.pkg.dev"
-        - name: region
-          type: string
-          optional: true
-          description: "AWS region, leave empty for Docker Hub and GCP."    
+          description: "Name of your repository (e.g. valohai/myimagename)"  
         - name: dockerfile
           default: "# Our base image
 
@@ -79,7 +72,12 @@
           type: string
           optional: true
           description: You can use this parameter to provide the Dockerfile contents instead of giving it as an input.
-          widget: dockerfile
+    widget: dockerfile
+    environment-variables:
+        - name: GCP_PROJECT_ID
+          description: ID of your GCP project that hosts of the Artifact Registry
+        - name: GCP_REGION
+          description: GCP Region for the Artifact Registry. For example, europe-west4 or us-east1
 
 - step:
     name: docker-image-aws
@@ -120,7 +118,7 @@
           type: string
           optional: true
           description: You can use this parameter to provide the Dockerfile contents instead of giving it as an input.
-          widget: dockerfile
+    widget: dockerfile
     environment-variables:
       - name: AWS_ECR_ACCOUNT_ID
         description: ID of your AWS account that hosts of the Elastic Container Registry
