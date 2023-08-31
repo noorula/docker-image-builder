@@ -72,7 +72,7 @@
           type: string
           optional: true
           description: You can use this parameter to provide the Dockerfile contents instead of giving it as an input.
-    widget: dockerfile
+          widget: dockerfile
     environment-variables:
         - name: GCP_PROJECT_ID
           description: ID of your GCP project that hosts of the Artifact Registry
@@ -118,7 +118,7 @@
           type: string
           optional: true
           description: You can use this parameter to provide the Dockerfile contents instead of giving it as an input.
-    widget: dockerfile
+          widget: dockerfile
     environment-variables:
       - name: AWS_ECR_ACCOUNT_ID
         description: ID of your AWS account that hosts of the Elastic Container Registry
