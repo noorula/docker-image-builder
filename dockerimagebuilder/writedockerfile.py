@@ -7,6 +7,7 @@ def parse_args():
     parser.add_argument('--dockerfile', type=str, default="")
     parser.add_argument('--docker-tag', type=str, default="")
     parser.add_argument('--repository', type=str, default="")
+    #parser.add_argument('--awsregion', type=str, default="")
     return parser.parse_args()
 
 def check_input():
@@ -27,7 +28,7 @@ def main():
 
         if args.dockerfile:
             print("Dockerfile contents provided as a parameter.")
-            f = open("Dockerfile", "a")
+            f = open("/valohai/repository/Dockerfile", "a")
             f.write(args.dockerfile)
             f.close()
         else:

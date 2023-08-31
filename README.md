@@ -7,7 +7,7 @@ Example steps for using Valohai executions to build Docker images and push them 
 - Account (admin) and a valid subscription at [app.valohai.com](https://app.valohai.com).
 - A Git repository containing a `valohai.yaml` with at least one step and all the other required code files.
 - A Docker registry to push images to.
-- A Valohai environment with the docker run argument `--privileged`. Contact Valohai Support (<valohai@support.com>) if you need one added to your organization.
+- A Valohai environment with the docker run argument `--privileged`. Contact Valohai Support (<support@valohai.com>) if you need one added to your organization.
     - Note that privileged containers have root capabilities on the host. This is required for running the Docker daemon inside a Docker container in this example.
 
 ## Running the steps
