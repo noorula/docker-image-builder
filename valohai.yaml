@@ -47,7 +47,7 @@
       - export REPOSITORY={parameter-value:repository}
       - export DOCKERTAG=$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/{parameter-value:repository}:{parameter-value:docker-tag}
       - docker build -t $DOCKERTAG -f /valohai/repository/Dockerfile --progress=plain . 
-      - echo $GCP_JSON_KEY | docker login -u _json_key --password-stdin $REPOSITORY
+      - echo $GCP_JSON_KEY | docker login -u _json_key --password-stdin https://$REPOSITORY
       - docker push $DOCKERTAG
       - echo "New image pushed."
       - echo "Use it in your Valohai step by setting the image property in your valohai.yaml to:"
