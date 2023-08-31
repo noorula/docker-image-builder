@@ -47,8 +47,8 @@
       - export REPOSITORY={parameter-value:repository}
       - export DOCKERTAG=$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/{parameter-value:repository}:{parameter-value:docker-tag}
       - docker build -t $DOCKERTAG -f /valohai/repository/Dockerfile --progress=plain . 
-      - echo $GCP_JSON_KEY | docker login -u _json_key --password-stdin $REPOSITORY;
-      - docker push $DOCKERTAG; }
+      - echo $GCP_JSON_KEY | docker login -u _json_key --password-stdin $REPOSITORY
+      - docker push $DOCKERTAG
     icon: artifact_registry
     category: Docker build & push image
     inputs:
