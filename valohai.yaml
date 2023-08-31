@@ -3,13 +3,15 @@
     image: docker:dind
     command: 
       - apk add --no-cache python3 py3-pip
-      - python ./dockerimagebuilder/writedockerfile.py {parameters}
+      - python ./docker_image_builder/writeDockerfile.py {parameters}
       - dockerd &
       - export DOCKERTAG={parameter-value:docker-tag}
       - test -f "/valohai/repository/Dockerfile" &&
         { docker build -t $DOCKERTAG -f /valohai/repository/Dockerfile --progress=plain . ;
         docker login -u $DHUSERNAME -p $DHPASSWORD;
         docker push $DOCKERTAG; }
+    icon: docker_hub
+    category: Docker build & push image
     inputs:
         - name: dockerfileinput
           optional: true
@@ -29,14 +31,9 @@
             FROM python:3.9
 
 
-            # Copy the requirements.txt file to our Docker image
+            # Replace valohai-utils with the libraries you want to add
 
-            ADD ./dockerimagebuilder/requirements.txt .
-
-
-            # Install the requirements.txt
-
-            RUN pip install -r requirements.txt"
+            RUN pip install valohai-utils"
           type: string
           optional: true
           description: You can use this parameter to provide the Dockerfile contents instead of giving it as an input.
@@ -47,7 +44,7 @@
     image: docker:dind
     command: 
       - apk add --no-cache python3 py3-pip
-      - python ./dockerimagebuilder/writedockerfile.py {parameters}
+      - python ./docker_image_builder/writeDockerfile.py {parameters}
       - dockerd &
       - export DOCKERTAG={parameter-value:docker-tag} && 
         export REPOSITORY={parameter-value:repository}
@@ -55,6 +52,8 @@
         { docker build -t $DOCKERTAG -f /valohai/repository/Dockerfile --progress=plain . ;
         echo $GCPKEY | docker login -u _json_key --password-stdin $REPOSITORY;
         docker push $DOCKERTAG; }
+    icon: artifact_registry
+    category: Docker build & push image
     inputs:
         - name: dockerfileinput
           optional: true
@@ -74,14 +73,9 @@
             FROM python:3.9
 
 
-            # Copy the requirements.txt file to our Docker image
+            # Replace valohai-utils with the libraries you want to add
 
-            ADD ./dockerimagebuilder/requirements.txt .
-
-
-            # Install the requirements.txt
-
-            RUN pip install -r requirements.txt"
+            RUN pip install valohai-utils"
           type: string
           optional: true
           description: You can use this parameter to provide the Dockerfile contents instead of giving it as an input.
@@ -89,46 +83,46 @@
 
 - step:
     name: docker-image-aws
-    image: docker:dind
+    image: valohai/docker-image-builder:latest
     command: 
-      - apk add --no-cache python3 py3-pip aws-cli
-      - python ./dockerimagebuilder/writedockerfile.py {parameters}
+      - python ./docker_image_builder/writeDockerfile.py {parameter:dockerfile}
       - dockerd &
-      - export DOCKERTAG={parameter-value:docker-tag} && 
-        export REPOSITORY={parameter-value:repository} &&
-        export REGION={parameter-value:region}
-      - test -f "/valohai/repository/Dockerfile" && 
-        { docker build -t $DOCKERTAG -f /valohai/repository/Dockerfile --progress=plain . ;
-        aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $REPOSITORY;
-        docker push $DOCKERTAG; }
+      - export REPOSITORY={parameter-value:repository}
+      - export DOCKERTAG=$AWS_ECR_ACCOUNT_ID.dkr.ecr.$AWS_ECR_REGION.amazonaws.com/{parameter-value:repository}:{parameter-value:docker-tag}
+      - docker build -t $DOCKERTAG -f /valohai/repository/Dockerfile --progress=plain .
+      - aws ecr create-repository --repository-name {parameter-value:repository} --image-tag-mutability IMMUTABLE --region $AWS_ECR_REGION || echo "Found existing repository {parameter-value:repository}"
+      - aws ecr get-login-password --region $AWS_ECR_REGION | docker login --username AWS --password-stdin $AWS_ECR_ACCOUNT_ID.dkr.ecr.$AWS_ECR_REGION.amazonaws.com
+      - docker push $DOCKERTAG
+      - echo "New image pushed."
+      - echo "Use it in your Valohai step by setting"
+      - echo "image: $AWS_ECR_ACCOUNT_ID.dkr.ecr.$AWS_ECR_REGION.amazonaws.com/{parameter-value:repository}:{parameter-value:docker-tag}"
+    icon: ecr
+    category: Docker build & push image
     inputs:
         - name: dockerfileinput
           optional: true
     parameters:
         - name: docker-tag
           type: string
-          description: "Tag that is used when pushing the image to the registry: <AWS_ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/<REPOSITORY>:<TAG>. Note that if there is already an image with the same tag, the tag will be removed and assigned to the new image." 
+          description: "Tag of the Docker image (e.g. 0.1 would create valohai/myimagename:0.1)" 
         - name: repository
           type: string
-          description: "Required for docker login in AWS and GCP: <AWS_ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/<REPOSITORY>"
-        - name: region
-          type: string
-          description: "Provide the AWS region, e.g. eu-west-1."        
+          description: "Name of your repository (e.g. valohai/myimagename)"       
         - name: dockerfile
           default: "# Our base image
 
             FROM python:3.9
 
 
-            # Copy the requirements.txt file to our Docker image
+            # Replace valohai-utils with the libraries you want to add
 
-            ADD ./dockerimagebuilder/requirements.txt .
-
-
-            # Install the requirements.txt
-
-            RUN pip install -r requirements.txt"
+            RUN pip install valohai-utils"
           type: string
           optional: true
           description: You can use this parameter to provide the Dockerfile contents instead of giving it as an input.
           widget: dockerfile
+    environment-variables:
+      - name: AWS_ECR_ACCOUNT_ID
+        description: ID of your AWS account that hosts of the Elastic Container Registry
+      - name: AWS_ECR_REGION
+        description: AWS Region for the Elastic Container Registry. For example, eu-west-1 or us-east-1
