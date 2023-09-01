@@ -95,9 +95,12 @@
       - aws ecr create-repository --repository-name {parameter-value:repository} --image-tag-mutability IMMUTABLE --region $AWS_ECR_REGION || echo "Found existing repository {parameter-value:repository}"
       - aws ecr get-login-password --region $AWS_ECR_REGION | docker login --username AWS --password-stdin $AWS_ECR_ACCOUNT_ID.dkr.ecr.$AWS_ECR_REGION.amazonaws.com
       - set -e
-      - docker push $DOCKERTAG && echo "New image pushed." || echo "Failed to push the image. Check that you have provided a valid Dockerfile or Dockerfile contents."
-      - echo "Use it in your Valohai step by setting the image property in your valohai.yaml to:"
-      - echo "$AWS_ECR_ACCOUNT_ID.dkr.ecr.$AWS_ECR_REGION.amazonaws.com/{parameter-value:repository}:{parameter-value:docker-tag}"
+      - docker push $DOCKERTAG && { echo "New image pushed." && 
+        echo "Use it in your Valohai step by setting the image property in your valohai.yaml to:" &&
+        echo "$AWS_ECR_ACCOUNT_ID.dkr.ecr.$AWS_ECR_REGION.amazonaws.com/{parameter-value:repository}:{parameter-value:docker-tag}"} || 
+        echo "Failed to push the image. Check that you have provided a valid Dockerfile or Dockerfile contents." && return 1
+      #- echo "Use it in your Valohai step by setting the image property in your valohai.yaml to:"
+      #- echo "$AWS_ECR_ACCOUNT_ID.dkr.ecr.$AWS_ECR_REGION.amazonaws.com/{parameter-value:repository}:{parameter-value:docker-tag}"
     icon: ecr
     category: Docker build & push image
     inputs:
