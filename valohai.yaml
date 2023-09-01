@@ -7,10 +7,11 @@
       - export DOCKERTAG={parameter-value:repository}:{parameter-value:docker-tag}
       - docker build -t $DOCKERTAG -f /valohai/repository/Dockerfile --progress=plain .
       - docker login -u $DHUSERNAME -p $DHPASSWORD
-      - docker push $DOCKERTAG
-      - echo "New image pushed."
-      - echo "Use it in your Valohai step by setting the image property in your valohai.yaml to:"
-      - echo "docker.io/$DOCKERTAG"
+      - set -e
+      - docker push $DOCKERTAG && echo "New image pushed." && 
+        echo "Use it in your Valohai step by setting the image property in your valohai.yaml to:" &&
+        echo "echo "docker.io/$DOCKERTAG" || 
+        echo "Failed to push the image. Check that you have provided a valid Dockerfile or Dockerfile contents and that the repository exists in your registry."
     icon: docker_hub
     category: Docker build & push image
     inputs:
@@ -47,12 +48,13 @@
       - export REPOSITORY={parameter-value:repository}
       - export DOCKERTAG=$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/{parameter-value:repository}:{parameter-value:docker-tag}
       - docker build -t $DOCKERTAG -f /valohai/repository/Dockerfile --progress=plain . 
-      - gcloud artifacts repositories create {parameter-value:repository} --location $GCP_REGION --repository-format docker --immutable-tags || echo "Found existing repository {parameter-value:repository}"
+      - gcloud artifacts repositories create $GCP_NEW_REPOSITORY --location $GCP_REGION --repository-format docker --immutable-tags || echo "Found existing repository {parameter-value:repository}"
       - gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/{parameter-value:repository}
-      - docker push $DOCKERTAG
-      - echo "New image pushed."
-      - echo "Use it in your Valohai step by setting the image property in your valohai.yaml to:"
-      - echo "$DOCKERTAG"
+      - set -e
+      - docker push $DOCKERTAG && echo "New image pushed." && 
+        echo "Use it in your Valohai step by setting the image property in your valohai.yaml to:" &&
+        echo "echo "$DOCKERTAG" || 
+        echo "Failed to push the image. Check that you have provided a valid Dockerfile or Dockerfile contents and that the repository exists in your registry."
     icon: artifact_registry
     category: Docker build & push image
     inputs:
@@ -82,6 +84,8 @@
           description: ID of your GCP project that hosts of the Artifact Registry
         - name: GCP_REGION
           description: GCP Region for the Artifact Registry. For example, europe-west4 or us-east1
+        - name: GCP_NEW_REPOSITORY
+          description: Artifact Registry repository names may only contain lowercase letters, numbers, and hyphens, and must begin with a letter and end with a letter or number.
 
 - step:
     name: docker-image-aws
@@ -98,9 +102,7 @@
       - docker push $DOCKERTAG && echo "New image pushed." && 
         echo "Use it in your Valohai step by setting the image property in your valohai.yaml to:" &&
         echo "$AWS_ECR_ACCOUNT_ID.dkr.ecr.$AWS_ECR_REGION.amazonaws.com/{parameter-value:repository}:{parameter-value:docker-tag}" || 
-        echo "Failed to push the image. Check that you have provided a valid Dockerfile or Dockerfile contents."
-      #- echo "Use it in your Valohai step by setting the image property in your valohai.yaml to:"
-      #- echo "$AWS_ECR_ACCOUNT_ID.dkr.ecr.$AWS_ECR_REGION.amazonaws.com/{parameter-value:repository}:{parameter-value:docker-tag}"
+        echo "Failed to push the image. Check that you have provided a valid Dockerfile or Dockerfile contents and that the repository exists in your registry."
     icon: ecr
     category: Docker build & push image
     inputs:
