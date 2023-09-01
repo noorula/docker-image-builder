@@ -47,7 +47,8 @@
       - export REPOSITORY={parameter-value:repository}
       - export DOCKERTAG=$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/{parameter-value:repository}:{parameter-value:docker-tag}
       - docker build -t $DOCKERTAG -f /valohai/repository/Dockerfile --progress=plain . 
-      - echo $GCP_JSON_KEY | docker login -u _json_key --password-stdin https://$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/{parameter-value:repository}
+      - gcloud artifacts repositories create {parameter-value:repository} --location $GCP_REGION --repository-format docker --immutable-tags || echo "Found existing repository {parameter-value:repository}"
+      - gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/{parameter-value:repository}
       - docker push $DOCKERTAG
       - echo "New image pushed."
       - echo "Use it in your Valohai step by setting the image property in your valohai.yaml to:"
@@ -94,7 +95,8 @@
       - aws ecr create-repository --repository-name {parameter-value:repository} --image-tag-mutability IMMUTABLE --region $AWS_ECR_REGION || echo "Found existing repository {parameter-value:repository}"
       - aws ecr get-login-password --region $AWS_ECR_REGION | docker login --username AWS --password-stdin $AWS_ECR_ACCOUNT_ID.dkr.ecr.$AWS_ECR_REGION.amazonaws.com
       - set -e
-      - docker push $DOCKERTAG | echo "New image pushed."
+      - docker push $DOCKERTAG
+      - echo "New image pushed."
       - echo "Use it in your Valohai step by setting the image property in your valohai.yaml to:"
       - echo "$AWS_ECR_ACCOUNT_ID.dkr.ecr.$AWS_ECR_REGION.amazonaws.com/{parameter-value:repository}:{parameter-value:docker-tag}"
     icon: ecr
@@ -110,14 +112,14 @@
           type: string
           description: "Name of your repository (e.g. valohai/myimagename)"       
         - name: dockerfile
-          default: "# Our base image
-
-            FROM python:3.9
-
-
+          #default: "# Our base image
+#
+#            FROM python:3.9
+#
+#
             # Replace valohai-utils with the libraries you want to add
-
-            RUN pip install valohai-utils"
+#
+#            RUN pip install valohai-utils"
           type: string
           optional: true
           description: You can use this parameter to provide the Dockerfile contents instead of giving it as an input.
